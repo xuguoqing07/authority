@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+	要使用Mapper代码,省去Dao的实现类
+	
+ -->
+<mapper namespace="com.bjsxt.sm.users.dao.IAMenuDao">
+	<resultMap type="com.bjsxt.sm.users.pojo.AMenu" id="resultMap">
+		<!-- 关联字段赋值 -->
+		<id column="id" property="id"/>
+		<!-- 赋值 -->
+		<collection property="roleList" column="id" ofType="com.bjsxt.sm.users.pojo.ARole"
+		select="com.bjsxt.sm.users.dao.IARoleDao.findListByMenuId"/>
+	</resultMap>
+	
+	<!-- 添加一条记录 
+		需要返回主键
+	-->
+	<insert id="save" parameterType="com.bjsxt.sm.users.pojo.AMenu" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+		insert into a_menu (name, parentId,url,content, leafStatus,status, createTime, updateTime,pubTime) 
+		values 
+		(#{name},#{parentId},#{url},#{content},#{leafStatus},#{status},#{createTime},#{updateTime},#{pubTime})
+	</insert>
+	
+	<!-- 更新一条记录 -->
+	<update id="update" parameterType="com.bjsxt.sm.users.pojo.AMenu">
+		update a_menu
+		<set>
+			parentId=#{parentId},url=#{url},leafStatus=#{leafStatus},
+			name=#{name},content=#{content},status=#{status},
+			createTime=#{createTime},updateTime=#{updateTime},
+			pubTime=#{pubTime},
+		</set>
+		<where>
+			and id=#{id}
+		</where> 
+	</update>
+	
+	<!-- 查询一条记录 -->
+	<select id="findOne" parameterType="map" resultMap="resultMap">
+		select * from a_menu 
+		<where>
+			<choose>
+				<otherwise>
+					and id = #{id}
+				</otherwise>
+			</choose>
+		</where>
+	</select>
+	
+	<!-- 查询多条记录 -->
+	<select id="findCondList" parameterType="map" resultMap="resultMap">
+		select * from a_menu 
+		<!-- 就是为了省去第一个条件左边的and -->
+		<where>
+			<!-- 动态SQL语句的时候到了到了到了
+				keyword:关键字,
+				map的键
+				
+				凡是字符串,可以加空的字符串判断
+			 -->
+			<if test="keyword != null and keyword != ''">
+				<!-- 关键字要模糊查询 -->
+				and (name like #{keyword} )
+			</if>
+			<!-- 按照状态查询 -->
+			<if test="status != null">
+				and status = #{status}
+			</if>
+			<!-- 按照时间范围搜索 -->
+			<if test="st != null and ed != null">
+				<![CDATA[
+					and createTime >= #{st} and createTime < #{ed}
+				]]>
+			</if>
+		</where>
+		
+		<!-- 一定要加排序 -->
+		order by pubTime desc 
+	</select>
+	
+	<!-- 查询多条菜单的记录
+		通过角色菜单表查询中间的菜单
+	 -->
+	<select id="findListByRoleId" resultMap="resultMap">
+		select am.* from a_menu am , a_role_menu arm where am.id = arm.menuId and arm.roleId = #{roleId} 
+	</select>
+</mapper>

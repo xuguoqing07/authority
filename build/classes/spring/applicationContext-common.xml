@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/aop 
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd"
+    default-autowire="byName">
+    
+    <!-- 告诉Spring哪些包下面的所有类,识别注解 -->
+    <context:component-scan base-package="com.bjsxt"/>
+    
+    <!-- 
+    	Property 'dataSource' is required
+    	Mybatis和Spring整合以后,Mybatis的数据源不能使用了,得交给Spring来做
+    	
+    	配置数据源; 驱动,url,用户名,密码
+    	
+    	自动装配:
+    	为什么id非得叫dataSource
+     -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+    	<!-- 驱动 -->
+    	<property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+    	<!-- url -->
+    	<property name="url" value="jdbc:mysql://localhost:3306/auth?useSSL=true"/>
+    	<!-- 用户名 -->
+    	<property name="username" value="root"/>
+    	<!-- 密码 -->
+    	<property name="password" value="123456"/>
+    </bean>
+    
+	<!-- 
+		Spring整合Mybatis
+		
+		~初始化SqlSessionFactory,有一个属性存储的是Mybatis的配置文件位置
+		~告诉它Mybatis的配置文件放哪呢?		
+		
+		id为啥必须叫做sqlSessionFactory,自动装配
+	 -->
+	 <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+	 	<!-- 
+	 		Resource:也可以写value,前面加上classpath:表示从clsspath中加载文件
+	 		注意是根目录
+	 		凡是见到Resource[],value值可以打*,*表示通配
+	 	 -->
+	 	<property name="configLocation" value="classpath:mybatis.cfg.xml"/>
+	 	<!-- 映射文件的位置 -->
+	 	<property name="mapperLocations" value="classpath:com/bjsxt/sm/*/pojo/*Mapper.xml"/>
+	 	
+	 	<!-- 自动装配省去这句话 -->
+	 	<!-- <property name="dataSource" ref="dataSource"/> -->
+	 </bean>
+	 
+	 <!-- 
+	 	当此类木有被其它类使用的时候可以不写id
+	  -->
+	 <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+	 	<!-- 告诉它,哪些包下面的所有的dao接口,
+	 		session.getMapper
+	 		
+	 		又是赋值
+	 	 -->
+	 	 <property name="basePackage" value="com.bjsxt"/>
+	 </bean>
+	 
+	 <!-- 事务管理器配置开始 -->
+	 <!-- 事务管理器 -->
+	 <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	 	<!-- 数据源赋值可以不写 
+	 		因为有自动装配
+	 	-->
+	 	<!-- <property name="dataSource" ref="dataSource"/> -->
+	 </bean>
+	 
+	 <!-- 事务管理器的通知类型
+	 	哪些方法开事务,哪些方法不开事务
+	 	
+	 	id:唯一
+	 	transaction-manager:需要一个事务管理器
+	  -->
+	 <tx:advice id="txAdvice" transaction-manager="transactionManager">
+	 	<tx:attributes>
+	 		<!-- 
+	 			某些方法想开启事务
+	 			某些方法想不想开启事务
+	 			
+	 			propagation:传播特性.把事务加到Service中的所有的方法,每执行一个方法都要开启事务,ServiceA调用ServiceB应该开启几个事务呢?
+	 			指的是ServiceA如何把事务传播给ServiceB,有几种方法.讨论ServiceA和ServiceB是否应该开启一个事务还是两个事务
+	 			REQUIRED:是ServiceA和ServiceB共用一个事务,如果其中的任何一个方法抛异常了,整体全都回滚
+	 			
+	 			isolation="DEFAULT":数据库的事务隔离级别,一般不写保持默认;
+	 			脏读:
+	 			幻读:
+	 			不可重复读:
+	 			
+	 			rollback-for:指定哪些异常事务回滚,默认是RunTimeException
+	 		 -->
+	 		<tx:method name="save*" propagation="REQUIRED" rollback-for="java.lang.Exception"/>
+	 		<tx:method name="update*" propagation="REQUIRED" rollback-for="java.lang.Exception"/>
+	 		<!-- 其它的方法不开启事务
+	 			read-only:只能读操作,如果有写操作,会报错
+	 		 -->
+	 		<tx:method name="*" read-only="true"/>
+	 	</tx:attributes>
+	 </tx:advice>
+	 
+	 <!-- 配置到AOP上去 -->
+	 <aop:config>
+	 	<!-- 
+	 		切入点:
+	 		哪些类上面的哪些方法执行通知里面的方法
+	 		
+	 		com.bjsxt.sm.*.service.*.*(..)):
+	 		在com.bjsxt.sm包下面的所有一级目录下面的service下面的所有类(接口)里面的所有方法
+	 	 -->
+		<aop:pointcut expression="execution (* com.bjsxt.sm.*.service.*.*(..))" id="pointcut"/>
+		<!-- 织入:就是将通知类型和切入点关联起来
+			advice-ref:通知类型
+			pointcut-ref:切入点
+		 -->
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut"/> 
+	 </aop:config>
+	 <!-- 事务管理器配置结束 -->
+</beans>

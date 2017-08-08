@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+	id="WebApp_ID" version="3.0">
+	<display-name>sm</display-name>
+	
+	<!-- SpringMVC配置开始(子容器) -->
+	<servlet>
+		<servlet-name>DispatcherServlet</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<!-- Tomcat一启动就加载此Servlet
+			有多个Servlet加载,到底先加载谁,后加载谁呢?
+			按照数字的大小,小的先加载,大的后加载
+			1:加载顺序
+		 -->
+		<load-on-startup>1</load-on-startup>
+		<!-- 如何加载Spring配置文件呢? 
+			Servlet从web.xml读取参数,读取值
+			读取的值,全部是String
+		-->
+		<init-param>
+			<!-- 
+				参数的名称必须叫做contextConfigLocation,
+				SpringMVC源码中写死的
+			 -->
+			<param-name>contextConfigLocation</param-name>
+			<!-- 值是配置文件的路径 -->
+			<param-value>classpath*:spring/applicationContext-*.xml</param-value>
+		</init-param>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>DispatcherServlet</servlet-name>
+		<!-- 
+			/:匹配的url第一级目录,不含扩展名
+			/*:匹配的是url的所有目录,当然也含扩展名,所有的扩展名,除了jsp都可以访问
+			
+			需求:
+			即要支持所有的路径,又要支持扩展名呢?
+			www.xxx.com/a.html;百度搜索引擎,喜欢伪静态的页面
+		 -->
+		<url-pattern>*.html</url-pattern>
+	</servlet-mapping>
+	<!-- SpringMVC配置结束 -->
+
+	<welcome-file-list>
+		<welcome-file>index.html</welcome-file>
+		<welcome-file>index.htm</welcome-file>
+		<welcome-file>index.jsp</welcome-file>
+		<welcome-file>default.html</welcome-file>
+		<welcome-file>default.htm</welcome-file>
+		<welcome-file>default.jsp</welcome-file>
+	</welcome-file-list>
+</web-app>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 加入DTD -->
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<!-- 默认值修改 -->
+	<settings>
+		<!-- log的工具,先别加 -->
+		<setting name="logImpl" value="LOG4J2"/>
+		<!-- 延迟加载 -->
+		<setting name="lazyLoadingEnabled" value="true"/>
+		<!-- 按需加载 -->
+		<setting name="aggressiveLazyLoading" value="false"/>
+	</settings>
+	<!-- 插件 -->
+	<plugins>
+		<!-- interceptor:拦截器 -->
+		<plugin interceptor="com.github.pagehelper.PageInterceptor">
+			<!-- 合理化分页 -->
+			<property name="reasonable" value="true"/>
+		</plugin>
+	</plugins>
+	
+	<!-- Mybatis里面配置的数据源可以全部删除了 -->
+	<!-- <environments default="myEnv">
+		<environment id="myEnv">
+			事务管理器
+			<transactionManager type="JDBC"/>
+			数据源的相关信息
+			<dataSource type="POOLED">
+				<property name="driver" value="com.mysql.jdbc.Driver"/>
+				<property name="url" value="jdbc:mysql://localhost:3306/mybatis"/>
+				<property name="username" value="root"/>
+				<property name="password" value="123456"/>
+			</dataSource>
+		</environment>
+	</environments> -->
+	
+	<mappers>
+		<!-- 配置映射文件 
+			建议把映射文件放到Spring中
+		-->
+		<!-- <mapper resource="com/bjsxt/sm/users/pojo/AAdminsMapper.xml"/> -->
+	</mappers>
+</configuration>

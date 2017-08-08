@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+	要使用Mapper代码,省去Dao的实现类
+	
+ -->
+<mapper namespace="com.bjsxt.sm.users.dao.IAAdminsDao">
+	<!-- 定义关联对象 -->
+	<resultMap type="com.bjsxt.sm.users.pojo.AAdmins" id="resultMap">
+		<!-- 关联字段要额外赋值 -->
+		<result column="roleId" property="roleId"/>
+		<!-- role如何赋值呢 
+			property:pojo的属性
+			column:列的名字,关联字段在当前表(Admins)的名字
+			javaType:property对应的java类型
+			select:另外发送一条查询角色的sql语句
+		-->
+		<association property="role" column="roleId" javaType="com.bjsxt.sm.users.pojo.ARole"
+		select="com.bjsxt.sm.users.dao.IARoleDao.selectById"/>
+	</resultMap>
+	
+	<!-- 添加一条记录 
+		需要返回主键
+	-->
+	<insert id="save" parameterType="com.bjsxt.sm.users.pojo.AAdmins" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+		insert into a_admins (roleId, email, password, status, createTime, updateTime) 
+		values 
+		(#{roleId},#{email},#{password},#{status},#{createTime},#{updateTime})
+	</insert>
+	
+	<!-- 更新一条记录 -->
+	<update id="update" parameterType="com.bjsxt.sm.users.pojo.AAdmins">
+		update a_admins
+		<set>
+			roleId=#{roleId},email=#{email},password=#{password},status=#{status},
+			phone=#{createTime},trueName=#{updateTime},qq=#{qq},
+			loginCount=#{loginCount},lastLoginIp=#{lastLoginIp},
+			createTime=#{createTime},updateTime=#{updateTime},lastLoginTime=#{lastLoginTime},
+		</set>
+		<where>
+			and id=#{id}
+		</where> 
+	</update>
+	
+	<!-- 查询一条记录 -->
+	<select id="findOne" parameterType="map" resultMap="resultMap">
+		select * from a_admins 
+		<where>
+			<choose>
+				<when test="email != null">
+					<!-- 按照用户名查询
+						用户名是邮箱,是唯一
+					 -->
+					and email = #{email}
+				</when>
+				<otherwise>
+					and id = #{id}
+				</otherwise>
+			</choose>
+		</where>
+	</select>
+	
+	<!-- 查询多条记录 -->
+	<select id="findCondList" parameterType="map" resultMap="resultMap">
+		select * from a_admins 
+		<!-- 就是为了省去第一个条件左边的and -->
+		<where>
+			<!-- 动态SQL语句的时候到了到了到了
+				keyword:关键字,
+				map的键
+				
+				凡是字符串,可以加空的字符串判断
+			 -->
+			<if test="keyword != null and keyword != ''">
+				<!-- 关键字要模糊查询 -->
+				and (email like #{keyword} )
+			</if>
+			<!-- 按照状态查询 -->
+			<if test="status != null">
+				and status = #{status}
+			</if>
+			<!-- 按照时间范围搜索 -->
+			<if test="st != null and ed != null">
+				<![CDATA[
+					and createTime >= #{st} and createTime < #{ed}
+				]]>
+			</if>
+		</where>
+		
+		<!-- 一定要加排序 -->
+		order by lastLoginTime desc 
+	</select>
+	<!-- 关联语句 
+		根据角色id查询管理员
+	-->
+	<select id="selectListById" resultType="com.bjsxt.sm.users.pojo.AAdmins">
+		select * from a_admins where roleId = #{id}
+	</select>
+</mapper>
